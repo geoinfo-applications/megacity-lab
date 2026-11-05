@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Megacity Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&display=swap">
+<style>
+:root {
+    --sign: #f6f7f4; --ink: #17263a; --ink-soft: #55637a; --rule: #d6dad6;
+    --l1: #0052a4; --l2: #00a84d; --l3: #ef7c1c; --l4: #00a5de; --l5: #996cac; --l6: #cd7c2f; --l7: #747f00;
+    --font: 'Gothic A1', 'Helvetica Neue', Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0f1a; color: var(--ink); font: 500 14px/1.4 var(--font); }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#view:active { cursor: grabbing; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--l1); outline-offset: 2px; }
+
+#sign { position: fixed; z-index: 3; left: 16px; top: 16px; bottom: 16px; width: 316px; background: var(--sign); border-radius: 6px; display: flex; flex-direction: column; box-shadow: 0 10px 34px rgba(0, 10, 30, .45); overflow: hidden; }
+#head { background: var(--ink); color: #fff; padding: 14px 16px 13px; }
+#head h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+#head p { margin: 3px 0 0; color: #b8c4d6; font-size: 13px; }
+#scroll { flex: 1; overflow-y: auto; padding: 4px 16px 12px; }
+
+.line { padding: 7px 0 0; }
+.line label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 700; }
+.line output { font-weight: 800; font-variant-numeric: tabular-nums; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; margin: 0; background: transparent; cursor: pointer; --c: var(--ink); }
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--c); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--c); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: #fff; border: 4px solid var(--c); }
+input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 4px solid var(--c); }
+
+#presets { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 2px; }
+.pill { border: 1.5px solid var(--ink); background: transparent; border-radius: 999px; padding: 3px 11px; font-weight: 700; font-size: 13px; }
+.pill[aria-pressed=true], .pill:hover { background: var(--ink); color: #fff; }
+
+#board { margin-top: 8px; border-top: 2px solid var(--ink); padding-top: 9px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+.stat b { display: block; font-size: 19px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--ink-soft); font-size: 12.5px; line-height: 1.25; display: block; }
+#warning { margin: 10px 0 0; padding: 8px 10px; background: #fdecd9; border-left: 4px solid var(--l3); font-size: 13px; }
+#warning:empty { display: none; }
+
+#actions { padding: 11px 16px; display: flex; gap: 8px; border-top: 1px solid var(--rule); background: #fff; }
+.go { flex: 1; border: 0; border-radius: 4px; padding: 9px 8px; font-weight: 800; background: var(--ink); color: #fff; }
+.go.alt { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+.go:hover { filter: brightness(1.25); }
+
+#dock { position: fixed; z-index: 3; left: 348px; right: 16px; bottom: 16px; display: grid; grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1fr) auto; gap: 18px; align-items: center; background: var(--sign); border-radius: 6px; padding: 7px 14px; box-shadow: 0 10px 34px rgba(0, 10, 30, .4); }
+#dock label { display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; }
+#dock output { font-variant-numeric: tabular-nums; font-weight: 800; }
+#layers { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+#stills { grid-column: 1 / -1; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+#looks { display: flex; gap: 4px; flex-wrap: wrap; margin-right: auto; }
+#photo { background: var(--ink); color: #fff; }
+#photo:disabled { cursor: not-allowed; opacity: .75; }
+.row { display: flex; gap: 6px; margin-top: 8px; }
+
+#toy { position: fixed; z-index: 3; right: 16px; bottom: 118px; background: var(--ink); color: #fff; border-radius: 4px; padding: 4px 10px; font-size: 12.5px; font-weight: 700; pointer-events: none; }
+#credit { position: fixed; z-index: 2; right: 18px; bottom: 104px; color: rgba(255, 255, 255, .8); font-size: 11.5px; text-shadow: 0 1px 2px #000; pointer-events: none; text-align: right; }
+#credit a { color: inherit; pointer-events: auto; }
+
+.label { position: fixed; z-index: 2; left: 0; top: 0; transform-origin: 0 0; white-space: nowrap; pointer-events: none; color: #fff; font-weight: 800; font-size: 14px; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); will-change: transform; }
+.label::before { content: ""; position: absolute; left: -10px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); }
+.label.primary { font-size: 19px; }
+.label.peak { font-weight: 500; font-size: 13px; opacity: .9; }
+.label.peak::before { display: none; }
+
+#picker { position: fixed; inset: 0; z-index: 5; background: #e9ecE4; display: flex; flex-direction: column; }
+#picker[hidden], #loader[hidden], .hidden { display: none !important; }
+#pickerBar { padding: 14px 24px 12px; display: flex; flex-wrap: wrap; align-items: end; gap: 12px 26px; background: var(--ink); color: #fff; }
+#pickerBar h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; max-width: 22ch; }
+#pickerBar .field { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #b8c4d6; }
+#pickerBar input[type=search] { font: inherit; border: 0; border-radius: 3px; padding: 6px 9px; width: 200px; color: var(--ink); }
+#pickerBar .pill { border-color: #fff; color: #fff; }
+#pickerBar .pill:hover { background: #fff; color: var(--ink); }
+#hits { position: absolute; z-index: 6; background: #fff; color: var(--ink); border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,.3); min-width: 200px; }
+#hits button { display: block; width: 100%; border: 0; background: none; text-align: left; padding: 5px 9px; }
+#hits button:hover { background: var(--rule); }
+#mapWrap { flex: 1; position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; }
+#mapBox { position: relative; line-height: 0; display: inline-block; }
+#map { max-width: calc(100vw - 28px); max-height: calc(100vh - 150px); width: auto; height: auto; cursor: crosshair; display: block; border-radius: 3px; }
+#foot { position: absolute; border: 3px solid var(--l1); border-radius: 50%; background: rgba(0, 82, 164, .28); transform: translate(-50%, -50%); pointer-events: none; display: none; }
+#footInfo { position: absolute; left: 24px; bottom: 22px; background: var(--ink); color: #fff; padding: 6px 10px; border-radius: 3px; font-size: 13.5px; pointer-events: none; }
+#closePicker { margin-left: auto; }
+
+#loader { position: fixed; inset: 0; z-index: 6; background: rgba(10, 15, 26, .55); display: flex; align-items: center; justify-content: center; }
+#loaderBox { background: var(--sign); border-radius: 6px; padding: 18px 22px; min-width: 300px; }
+#loaderBox b { display: block; font-size: 19px; font-weight: 800; }
+#progress { margin-top: 10px; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+#progress i { display: block; height: 100%; width: 0; background: var(--l2); transition: width .2s; }
+
+@media (max-width: 860px) {
+    #sign { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 48vh; border-radius: 6px 6px 0 0; }
+    #dock { left: 8px; right: 8px; bottom: auto; top: 8px; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #layers { grid-column: 1 / -1; justify-content: flex-start; }
+    #toy { top: 118px; bottom: auto; right: 8px; }
+    #credit { top: 8px; right: 8px; bottom: auto; font-size: 10px; max-width: 60vw; }
+    #pickerBar h2 { font-size: 21px; }
+}
+@media (prefers-reduced-motion: reduce) { #progress i { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="3D view of the generated city"></canvas>
+<div id="labels"></div>
+
+<section id="sign" aria-label="City parameters">
+    <header id="head">
+        <h1 id="cityName">Megacity Lab</h1>
+        <p id="cityWhere">Pick a place on the map</p>
+    </header>
+    <div id="scroll">
+        <div id="presets" role="group" aria-label="Presets"></div>
+        <div id="params"></div>
+        <div id="board"></div>
+        <p id="warning"></p>
+    </div>
+    <div id="actions">
+        <button class="go alt" id="moveCity">Move the city</button>
+        <button class="go" id="reroll">Another city</button>
+    </div>
+</section>
+
+<section id="dock" aria-label="View">
+    <div><label for="hour">Time of day <output id="hourOut"></output></label><input id="hour" type="range" min="0" max="24" step="0.05" value="16.5" style="--c:var(--ink)"></div>
+    <div><label for="grow">Growth <output id="growOut"></output></label><input id="grow" type="range" min="0" max="100" step="0.5" value="100" style="--c:var(--l2)"></div>
+    <div id="layers" role="group" aria-label="Map layers"></div>
+    <div id="stills">
+        <div id="looks" role="group" aria-label="Light for stills"></div>
+        <button class="pill" id="refine" title="Sharpen the view with real light whenever the camera rests">Refine</button>
+        <button class="pill" id="photo" title="Render this view in high quality and download it">Photo</button>
+    </div>
+</section>
+
+<div id="credit">Terrain, imagery, land cover, roads, rail, names: © swisstopo. <a href="sources.html">All sources</a></div>
+<div id="toy">Toy, not a planning model</div>
+
+<section id="picker">
+    <div id="pickerBar">
+        <h2>Click anywhere in Switzerland to drop a city there</h2>
+        <div class="field"><label for="place">Or find a place</label><input id="place" type="search" placeholder="Flawil" autocomplete="off"><div id="hits"></div></div>
+        <button class="pill" id="goFurstenland">Fürstenland</button>
+        <button class="pill hidden" id="closePicker">Back to the city</button>
+    </div>
+    <div id="mapWrap">
+        <div id="mapBox"><canvas id="map" width="1400" height="900"></canvas><div id="foot"></div></div>
+        <div id="footInfo"></div>
+    </div>
+</section>
+
+<div id="loader" hidden><div id="loaderBox"><b id="loaderText">Loading</b><div id="progress"><i></i></div></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

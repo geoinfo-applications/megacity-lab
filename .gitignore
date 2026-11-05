@@ -1,0 +1,9 @@
+data/
+site/nat/
+site/cover/
+site/landmarks/
+media/
+.venv/
+__pycache__/
+node_modules/
+megacity-data.zip

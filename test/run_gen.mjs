@@ -1,0 +1,12 @@
+import { loadWindow } from './load_window.mjs';
+import { generate } from '../site/js/gen/generate.js';
+const [e, n, size, json] = [+(process.argv[2] ?? 2731000), +(process.argv[3] ?? 1254000), +(process.argv[4] ?? 1000), process.argv[5] ?? '{}'];
+let t = Date.now();
+const w = await loadWindow(e, n, size);
+console.log('window', Date.now() - t, 'ms', 'main', w.main.length, 'rail', w.rail.length, 'places', w.places.length, w.places.sort((a, b) => b.rank - a.rank).slice(0, 8).map((p) => p.name + ':' + p.rank).join(' '));
+const shares = [0, 0, 0, 0, 0]; for (const c of w.cover) shares[c]++; console.log('cover shares', shares.map((s) => (s / w.cover.length * 100).toFixed(1)).join(' '));
+t = Date.now(); let last = t;
+const c = generate(w, JSON.parse(json), (m, f) => { const now = Date.now(); console.log(`  ${(f * 100).toFixed(0)} % ${m} +${now - last} ms`); last = now; });
+console.log('generate', Date.now() - t, 'ms', process.memoryUsage().rss >> 20, 'MB');
+console.log(Object.entries(c.stats).map(([k, v]) => `${k}=${typeof v === 'number' ? +v.toFixed(2) : v}`).join(' '));
+console.log('centres', c.centres.map((x) => x.name ?? '?').join(', '));
