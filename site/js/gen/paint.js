@@ -28,10 +28,12 @@ function stampRect(data, size, metresPerPx, half, b, colour, shrink) {
     }
 }
 
-export function paintGround(city, N, cell) {
-    const M = city.M;
+export function paintGround(city, N, cell, sizes) {
+    const S = sizes.ground, G = sizes.glow;
+    const M = Math.min(city.M, S);
     const fine = new Uint8ClampedArray(M * M * 4);
     const scale = M / N;
+    const rasterScale = city.M / M;
     const distWater = chamfer(city.water, N, cell);
     const nearCity = boxBlur(Float32Array.from(city.urban), N, 6);
     let seed = 12345;
@@ -40,7 +42,7 @@ export function paintGround(city, N, cell) {
         for (let x = 0; x < M; x++) {
             const i = Math.floor(x / scale);
             const k = j * N + i;
-            const type = city.typeRaster[y * M + x];
+            const type = city.typeRaster[Math.floor(y * rasterScale) * city.M + Math.floor(x * rasterScale)];
             let colour = null;
             if (type) colour = TYPE_COLOUR[type];
             else if (city.urban[k]) colour = PAVEMENT;
@@ -60,7 +62,6 @@ export function paintGround(city, N, cell) {
     const metresPerFine = N * cell / M;
     const half = N * cell / 2;
     for (const b of city.list) if (b.kind !== KIND.TREE && b.kind !== KIND.ROUND_TREE && !b.detail) stampRect(fine, M, metresPerFine, half, b, ROOF[b.kind], 1);
-    const S = 8192;
     const ppm = S / (N * cell);
     const fineCanvas = new OffscreenCanvas(M, M);
     fineCanvas.getContext('2d', { willReadFrequently: true }).putImageData(new ImageData(fine, M, M), 0, 0);
@@ -92,7 +93,6 @@ export function paintGround(city, N, cell) {
     strokeLevel(ctx, ppm, ROAD.MOTORWAY, '#8c8468', 2.5);
 
     // Night: a lit carpet for the buildings far LOD drops, then glowing streets.
-    const G = 4096;
     const gs = G / (N * cell);
     const lit = new Uint8ClampedArray(G * G * 4);
     for (let k = 3; k < lit.length; k += 4) lit[k] = 255;

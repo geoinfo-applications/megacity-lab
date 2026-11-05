@@ -4,6 +4,7 @@ import { OrbitCamera, transform } from './camera.js';
 import { lv95ToWgs84, solarPosition, sunVector } from './sun.js';
 import { TerrainField } from './terrain.js';
 import { installTouch } from './touch.js';
+import { TEXTURES, isLowMemoryDevice, lastBuildDied, markBuildEnded, markBuildStarted } from './device.js';
 import { Renderer } from './render.js';
 import { loadJson, loadDem, loadImage, NationalStore } from './data.js';
 import { rankPlaces } from './gen/places.js';
@@ -38,7 +39,8 @@ const PRESETS = [
 const LAYERS = [['none', 'City'], ['metro', 'Metro'], ['traffic', 'Traffic'], ['people', 'People']];
 
 const state = {
-    params: { ...PRESETS[0].values, seed: 1 },
+    // Seoul peaks near 1.5 GB while generating, which an iPhone tab does not survive.
+    params: { ...PRESETS[isLowMemoryDevice() ? 1 : 0].values, seed: 1 },
     e: null, n: null, name: null,
     city: null, overlayCache: {}, layer: 'none',
     grow: 1, growFrom: null, hour: 16.5, base: 0, domain: null, national: null, names: [], clock: 0,
@@ -360,10 +362,15 @@ async function build(animate) {
         state.pending.resolve({ token: -1 });
         state.pending = null;
     }
+    markBuildStarted();
     try {
         await buildInner(token, animate);
     } catch (error) {
         if (token === state.token) showBuildError(error);
+    }
+    if (token === state.token) {
+        markBuildEnded();
+        $('deathNote').classList.add('hidden');
     }
 }
 
@@ -384,7 +391,7 @@ async function buildInner(token, animate) {
         rail: (win.infra?.rail ?? []).map((m) => ({ points: toWorld(m.c, win.x0, win.y1, half) })),
     };
     const clearing = state.clearing ? { clearX: state.clearing.e - win.x0 - half, clearZ: win.y1 - state.clearing.n - half, clearR: state.clearing.r } : {};
-    worker.postMessage({ input, params: { ...state.params, ...clearing }, token });
+    worker.postMessage({ input, params: { ...state.params, ...clearing }, textures: TEXTURES, token });
     const result = await new Promise((resolve, reject) => { state.pending = { resolve, reject, token }; });
     state.pending = null;
     if (result.token !== state.token) return;
@@ -717,7 +724,7 @@ function placeLabels(viewProj) {
 // ---------- Stills in the page ----------
 const LOOKS = [['time', 'Time of day'], ['golden', 'Golden hour'], ['fog', 'Sea of fog'], ['blue', 'Blue hour']];
 const REFINE = { rest: 250, samples: 96, slowFirstSample: 400 };
-const refine = { on: !window.matchMedia('(pointer: coarse)').matches, session: null, key: '', changed: 0, starting: false, generation: 0, broken: false };
+const refine = { on: !window.matchMedia('(pointer: coarse)').matches && !isLowMemoryDevice(), session: null, key: '', changed: 0, starting: false, generation: 0, broken: false };
 
 function stillOptions(w, h, samples) {
     const { sun, night } = sunNow();
@@ -1130,7 +1137,15 @@ window.__mc = {
     view(o) { Object.assign(camera, o); camera.anim = null; state.growFrom = null; state.grow = o.grow ?? 1; if (o.hour !== undefined) { state.hour = o.hour; syncView(); } followGround(); },
 };
 
+// After a crash the browser reloads the same URL, so building from the hash again would crash again.
+function recoverFromDeadBuild() {
+    state.params = { ...PRESETS[PRESETS.length - 1].values, seed: 1 };
+    history.replaceState(null, '', location.pathname + location.search);
+    $('deathNote').classList.remove('hidden');
+}
+
 async function boot() {
+    document.body.classList.toggle('lite', isLowMemoryDevice());
     buildPanel();
     buildStillControls();
     installInput();
@@ -1140,7 +1155,10 @@ async function boot() {
     setLayer('none');
     requestAnimationFrame(frame);
     window.__mc.booted = true;
-    if (readHash()) {
+    if (location.hash.length > 1 && lastBuildDied()) {
+        recoverFromDeadBuild();
+        syncPanel(true);
+    } else if (readHash()) {
         syncPanel(true);
         syncView();
         $('picker').hidden = true;

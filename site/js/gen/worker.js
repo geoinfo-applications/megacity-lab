@@ -3,13 +3,13 @@ import { generate } from './generate.js';
 import { paintGround } from './paint.js';
 
 self.onmessage = ({ data }) => {
-    const { input, params, token } = data;
+    const { input, params, textures, token } = data;
     try {
         const t0 = performance.now();
         const report = (message, fraction) => self.postMessage({ type: 'progress', token, message, fraction });
         const city = generate(input, params, report);
         report('Painting the streets', 0.94);
-        const { ground, glow } = paintGround(city, input.N, input.cell);
+        const { ground, glow } = paintGround(city, input.N, input.cell, textures);
         const roads = city.roads.map((r) => ({ level: r.level, points: r.points, real: !!r.real }));
         const out = {
             type: 'done', token, ms: performance.now() - t0, params: city.params, stats: city.stats, centres: city.centres, metro: city.metro,

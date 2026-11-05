@@ -60,7 +60,10 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 #photo { background: var(--ink); color: #fff; }
 #photo:disabled { cursor: not-allowed; opacity: .75; }
 .row { display: flex; gap: 6px; margin-top: 8px; }
-.narrow, #tabs, #chip, #hint, #looksNote { display: none; }
+.narrow, #tabs, #chip, #hint, #looksNote, #liteNote { display: none; }
+#deathNote { width: 100%; margin: 0; padding: 8px 10px; border-left: 4px solid var(--l3); background: #fdecd9; color: var(--ink); font-size: 13px; }
+body.lite #stills { display: none; }
+body.lite #liteNote { display: block; margin: 0; color: var(--ink-soft); font-size: 13px; }
 
 #toy { position: fixed; z-index: 3; right: 16px; bottom: 118px; background: var(--ink); color: #fff; border-radius: 4px; padding: 4px 10px; font-size: 12.5px; font-weight: 700; pointer-events: none; }
 #credit { position: fixed; z-index: 2; right: 18px; bottom: 104px; color: rgba(255, 255, 255, .8); font-size: 11.5px; text-shadow: 0 1px 2px #000; pointer-events: none; text-align: right; }
@@ -180,6 +183,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
     <div><label for="hour">Time of day <output id="hourOut"></output></label><input id="hour" type="range" min="0" max="24" step="0.05" value="16.5" style="--c:var(--ink)"></div>
     <div><label for="grow">Growth <output id="growOut"></output></label><input id="grow" type="range" min="0" max="100" step="0.5" value="100" style="--c:var(--l2)"></div>
     <div id="layers" role="group" aria-label="Map layers"></div>
+    <p id="liteNote">Refine and Photo need more memory than this phone gives a page.</p>
     <div id="stills">
         <div id="looks" role="group" aria-label="Light for stills"></div>
         <p id="looksNote">Looks show in Refine and Photo.</p>
@@ -200,6 +204,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 
 <section id="picker">
     <div id="pickerBar">
+        <p id="deathNote" class="hidden">The browser ran out of memory on that city. Try this smaller one, or fewer people.</p>
         <h2><span class="wide">Click anywhere in Switzerland to drop a city there</span><span class="narrow">Tap Switzerland to drop a city</span></h2>
         <div class="field"><label for="place">Or find a place</label><input id="place" type="search" placeholder="Flawil" autocomplete="off"><div id="hits"></div></div>
         <button class="pill" id="goFurstenland">Fürstenland</button>
