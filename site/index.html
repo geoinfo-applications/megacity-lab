@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Megacity Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,8 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 
 #presets { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 2px; }
 .pill { border: 1.5px solid var(--ink); background: transparent; border-radius: 999px; padding: 3px 11px; font-weight: 700; font-size: 13px; }
-.pill[aria-pressed=true], .pill:hover { background: var(--ink); color: #fff; }
+.pill[aria-pressed=true] { background: var(--ink); color: #fff; }
+@media (hover: hover) { .pill:hover { background: var(--ink); color: #fff; } }
 
 #board { margin-top: 8px; border-top: 2px solid var(--ink); padding-top: 9px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
 .stat b { display: block; font-size: 19px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
@@ -59,6 +60,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 #photo { background: var(--ink); color: #fff; }
 #photo:disabled { cursor: not-allowed; opacity: .75; }
 .row { display: flex; gap: 6px; margin-top: 8px; }
+.narrow, #tabs, #chip, #hint, #looksNote { display: none; }
 
 #toy { position: fixed; z-index: 3; right: 16px; bottom: 118px; background: var(--ink); color: #fff; border-radius: 4px; padding: 4px 10px; font-size: 12.5px; font-weight: 700; pointer-events: none; }
 #credit { position: fixed; z-index: 2; right: 18px; bottom: 104px; color: rgba(255, 255, 255, .8); font-size: 11.5px; text-shadow: 0 1px 2px #000; pointer-events: none; text-align: right; }
@@ -77,7 +79,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 #pickerBar .field { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #b8c4d6; }
 #pickerBar input[type=search] { font: inherit; border: 0; border-radius: 3px; padding: 6px 9px; width: 200px; color: var(--ink); }
 #pickerBar .pill { border-color: #fff; color: #fff; }
-#pickerBar .pill:hover { background: #fff; color: var(--ink); }
+@media (hover: hover) { #pickerBar .pill:hover { background: #fff; color: var(--ink); } }
 #hits { position: absolute; z-index: 6; background: #fff; color: var(--ink); border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,.3); min-width: 200px; }
 #hits button { display: block; width: 100%; border: 0; background: none; text-align: left; padding: 5px 9px; }
 #hits button:hover { background: var(--rule); }
@@ -94,13 +96,61 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
 #progress { margin-top: 10px; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
 #progress i { display: block; height: 100%; width: 0; background: var(--l2); transition: width .2s; }
 
-@media (max-width: 860px) {
-    #sign { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 48vh; border-radius: 6px 6px 0 0; }
-    #dock { left: 8px; right: 8px; bottom: auto; top: 8px; grid-template-columns: 1fr 1fr; gap: 8px; }
-    #layers { grid-column: 1 / -1; justify-content: flex-start; }
-    #toy { top: 236px; bottom: auto; right: 8px; }
-    #credit { top: 236px; left: 8px; right: auto; bottom: auto; font-size: 10px; max-width: 55vw; text-align: left; }
-    #pickerBar h2 { font-size: 21px; }
+@media (max-width: 860px), (max-height: 500px) {
+    :root { --tabs: calc(54px + env(safe-area-inset-bottom)); --top: calc(8px + env(safe-area-inset-top)); }
+    html, body { height: 100dvh; }
+    .wide { display: none; }
+    .narrow { display: inline; }
+
+    #tabs { display: flex; position: fixed; z-index: 4; left: 0; right: 0; bottom: 0; height: var(--tabs); padding-bottom: env(safe-area-inset-bottom); background: var(--ink); }
+    #tabs button { flex: 1; border: 0; background: none; color: #fff; font-size: 15px; font-weight: 800; }
+    #tabs button[aria-pressed=true] { background: var(--sign); color: var(--ink); }
+
+    #sign, #dock { display: none; position: fixed; z-index: 3; top: auto; left: 0; right: 0; bottom: var(--tabs); width: auto; max-height: 58dvh; border-radius: 12px 12px 0 0; overscroll-behavior: contain; }
+    body[data-panel=city] #sign { display: flex; }
+    body[data-panel=view] #dock { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; overflow-y: auto; }
+    #head, #moveCity { display: none; }
+    #scroll { overscroll-behavior: contain; }
+    #layers { justify-content: flex-start; gap: 8px; }
+    #stills, #looks { gap: 8px; }
+    #looks { width: 100%; }
+    #looksNote { display: block; width: 100%; margin: 0; color: var(--ink-soft); font-size: 13px; }
+
+    input[type=range] { height: 44px; touch-action: pan-y; }
+    input[type=range]::-webkit-slider-thumb { width: 28px; height: 28px; margin-top: -11px; }
+    input[type=range]::-moz-range-thumb { width: 20px; height: 20px; }
+    .pill { min-height: 42px; padding: 8px 14px; font-size: 14px; }
+    #presets { gap: 8px; }
+    .go { padding: 13px 8px; font-size: 15px; }
+
+    #chip { display: block; position: fixed; z-index: 2; top: var(--top); left: 8px; max-width: 62vw; padding: 6px 10px; border-radius: 6px; background: var(--ink); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+    #chip b { font-size: 15px; font-weight: 800; }
+    #chipPeople { margin-left: 6px; color: #b8c4d6; font-size: 13px; }
+    #toy { top: var(--top); right: 8px; bottom: auto; max-width: 30vw; padding: 3px 7px; font-size: 11px; line-height: 1.2; }
+    #credit { top: calc(var(--top) + 38px); left: 8px; right: auto; bottom: auto; padding: 0 8px; border-radius: 4px; background: rgba(23, 38, 58, .78); color: #fff; font-size: 11px; text-align: left; text-shadow: none; }
+    #credit a { display: inline-block; padding: 7px 2px; }
+    #hint { display: block; position: fixed; z-index: 2; left: 50%; bottom: calc(var(--tabs) + 12px); transform: translateX(-50%); width: max-content; max-width: 90vw; padding: 7px 12px; border-radius: 6px; background: rgba(23, 38, 58, .9); color: #fff; font-size: 13px; pointer-events: none; }
+    body[data-panel] #hint { display: none; }
+
+    #pickerBar { gap: 8px 10px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; align-items: center; }
+    #pickerBar h2 { width: 100%; max-width: none; font-size: 19px; }
+    #pickerBar .field { flex: 1 1 150px; }
+    #pickerBar input[type=search] { width: 100%; padding: 9px; font-size: 16px; }
+    #pickerBar #closePicker { margin-left: 0; }
+    #hits button { padding: 11px 12px; }
+    #mapWrap { padding: 8px; }
+    #map { max-width: calc(100vw - 16px); max-height: calc(100dvh - 210px); }
+    #footInfo { left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); }
+    #loaderBox { min-width: min(300px, 86vw); }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+    #sign, #dock { top: 8px; left: 8px; right: auto; width: min(380px, 48vw); max-height: none; border-radius: 8px; bottom: calc(var(--tabs) + 8px); }
+    #tabs { left: 8px; right: auto; width: min(380px, 48vw); bottom: 0; }
+    #chip { left: auto; right: 8px; top: calc(var(--top) + 28px); max-width: 44vw; }
+    #credit { left: auto; right: 8px; top: calc(var(--top) + 64px); text-align: right; }
+    #hint { left: 74%; bottom: 12px; max-width: 46vw; }
+    #pickerBar h2 { display: none; }
+    #map { max-height: calc(100dvh - 80px); }
 }
 @media (prefers-reduced-motion: reduce) { #progress i { transition: none; } }
 </style>
@@ -132,17 +182,25 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
     <div id="layers" role="group" aria-label="Map layers"></div>
     <div id="stills">
         <div id="looks" role="group" aria-label="Light for stills"></div>
+        <p id="looksNote">Looks show in Refine and Photo.</p>
         <button class="pill" id="refine" title="Sharpen the view with real light whenever the camera rests">Refine</button>
         <button class="pill" id="photo" title="Render this view in high quality and download it">Photo</button>
     </div>
 </section>
 
-<div id="credit">Terrain, imagery, land cover, roads, rail, names: © swisstopo. <a href="sources.html">All sources</a></div>
+<div id="credit"><span class="wide">Terrain, imagery, land cover, roads, rail, names: </span>© swisstopo. <a href="sources.html">All sources</a></div>
 <div id="toy">Toy, not a planning model</div>
+<div id="chip"><b id="chipName"></b><span id="chipPeople"></span></div>
+<div id="hint">One finger moves. Two fingers zoom, turn and tilt.</div>
+<nav id="tabs" aria-label="Panels">
+    <button id="tabCity" aria-pressed="false">City</button>
+    <button id="tabView" aria-pressed="false">View</button>
+    <button id="tabMove">Move</button>
+</nav>
 
 <section id="picker">
     <div id="pickerBar">
-        <h2>Click anywhere in Switzerland to drop a city there</h2>
+        <h2><span class="wide">Click anywhere in Switzerland to drop a city there</span><span class="narrow">Tap Switzerland to drop a city</span></h2>
         <div class="field"><label for="place">Or find a place</label><input id="place" type="search" placeholder="Flawil" autocomplete="off"><div id="hits"></div></div>
         <button class="pill" id="goFurstenland">Fürstenland</button>
         <button class="pill hidden" id="closePicker">Back to the city</button>

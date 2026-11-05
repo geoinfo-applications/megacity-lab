@@ -3,6 +3,7 @@ import { createContext, imageTexture, texture } from './gl.js';
 import { OrbitCamera, transform } from './camera.js';
 import { lv95ToWgs84, solarPosition, sunVector } from './sun.js';
 import { TerrainField } from './terrain.js';
+import { installTouch } from './touch.js';
 import { Renderer } from './render.js';
 import { loadJson, loadDem, loadImage, NationalStore } from './data.js';
 import { rankPlaces } from './gen/places.js';
@@ -109,8 +110,10 @@ function buildPanel() {
         b.addEventListener('click', () => setLayer(id));
         $('layers').append(b);
     }
-    $('reroll').addEventListener('click', () => { state.params.seed = (state.params.seed % 9999) + 1; build(true); });
+    $('reroll').addEventListener('click', () => { state.params.seed = (state.params.seed % 9999) + 1; showPanel(null); build(true); });
     $('moveCity').addEventListener('click', openPicker);
+    $('tabMove').addEventListener('click', openPicker);
+    for (const [id, panel] of [['tabCity', 'city'], ['tabView', 'view']]) $(id).addEventListener('click', () => showPanel(document.body.dataset.panel === panel ? null : panel));
     $('closePicker').addEventListener('click', () => { $('picker').hidden = true; });
     $('hour').addEventListener('input', () => { state.hour = +$('hour').value; syncView(); });
     $('grow').addEventListener('input', () => {
@@ -120,6 +123,14 @@ function buildPanel() {
     });
     syncPanel(true);
     syncView();
+}
+
+// Phones show one panel at a time over the map. Wider layouts ignore this.
+function showPanel(panel) {
+    if (panel) document.body.dataset.panel = panel;
+    else delete document.body.dataset.panel;
+    $('tabCity').setAttribute('aria-pressed', String(panel === 'city'));
+    $('tabView').setAttribute('aria-pressed', String(panel === 'view'));
 }
 
 function syncPanel(setInputs) {
@@ -147,6 +158,7 @@ function stat(value, label) { return `<div class="stat"><b>${value}</b><span>${l
 
 function showStats(s) {
     const millions = (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} M` : fmt.format(Math.round(v)));
+    $('chipPeople').textContent = millions(s.housed);
     $('board').innerHTML = [
         stat(millions(s.housed), `housed of ${millions(s.population)} asked`),
         stat(`${fmt.format(Math.round(s.footprintKm2))} km²`, `city, in a ${s.extentKm.toFixed(0)} km block`),
@@ -442,6 +454,7 @@ async function install(result, win, animate) {
     buildLabels(result, win);
     const placeName = result.centres[0].name ?? state.name ?? 'Neu';
     $('cityName').textContent = placeName.replace(/\s+(SG|TG|AR|AI|ZH|BE|LU|GR|TI|VS|VD|GE|AG|BL|BS|SO|FR|NE|JU|SH|SZ|ZG|UR|OW|NW|GL)$/, '');
+    $('chipName').textContent = $('cityName').textContent;
     $('cityWhere').textContent = `Seed ${result.params.seed}, built in ${(result.ms / 1000).toFixed(1)} s`;
     $('loader').hidden = true;
     setBusy(false);
@@ -611,6 +624,7 @@ async function buildOuter(win, { span, size, imageSize, folder = 'nat/', cells =
 function installInput() {
     let drag = null;
     canvas.addEventListener('pointerdown', (ev) => {
+        if (ev.pointerType === 'touch') return;
         canvas.setPointerCapture(ev.pointerId);
         drag = { x: ev.clientX, y: ev.clientY, button: ev.button, shift: ev.shiftKey };
         camera.anim = null;
@@ -621,11 +635,7 @@ function installInput() {
         drag.x = ev.clientX;
         drag.y = ev.clientY;
         if (drag.button === 2 || drag.shift) {
-            const scale = camera.distance * 0.0012;
-            const c = Math.cos(camera.yaw), s = Math.sin(camera.yaw);
-            camera.target[0] -= (dx * c + dy * s) * scale;
-            camera.target[2] -= (dy * c - dx * s) * scale;
-            followGround();
+            moveTarget(dx * camera.distance * 0.0012, dy * camera.distance * 0.0012);
         } else {
             camera.yaw += dx * 0.005;
             camera.pitch = Math.max(0.03, Math.min(1.5, camera.pitch + dy * 0.004));
@@ -641,6 +651,20 @@ function installInput() {
         camera.distance = Math.max(120, Math.min(90000, camera.distance * Math.exp(ev.deltaY * 0.0012)));
         followGround();
     }, { passive: false });
+    installTouch(canvas, camera, {
+        moveTarget,
+        onTouch() {
+            showPanel(null);
+            $('hint').classList.add('hidden');
+        },
+    });
+}
+
+function moveTarget(right, down) {
+    const c = Math.cos(camera.yaw), s = Math.sin(camera.yaw);
+    camera.target[0] -= right * c + down * s;
+    camera.target[2] -= down * c - right * s;
+    followGround();
 }
 
 function followGround() {
